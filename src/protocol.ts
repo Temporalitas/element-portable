@@ -8,16 +8,35 @@ Please see LICENSE files in the repository root for full details.
 
 import { app, ipcMain } from "electron";
 import { URL } from "node:url";
-import path from "node:path";
+import path, {dirname} from "node:path";
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
+import child_process from "node:child_process";
+import process from "node:process";
 
 const LEGACY_PROTOCOL = "element";
 const SEARCH_PARAM = "element-desktop-ssoid";
 const STORE_FILE_NAME = "sso-sessions.json";
 
-// we getPath userData before electron-main changes it, so this is the default value
-const storePath = path.join(app.getPath("userData"), STORE_FILE_NAME);
+function getUserInvokedExecutablePath(): string | undefined {
+    try{ 
+        const parentProcessPath = child_process.execSync(`powershell.exe "(Get-Process -Id ${process.ppid} | Select-Object -Property Path).Path"`).toString().trim();
+        if (parentProcessPath && !parentProcessPath.includes("powershell") && parentProcessPath.endsWith(".exe")) return parentProcessPath;
+
+        const parentElectronProcessInfo = child_process.execSync("wmic process get executablePath, parentProcessId, processId").toString().split(/\r+\n+/)?.find(e => e.trim().endsWith(String(process.ppid)));
+        return /.+exe/.exec(parentElectronProcessInfo!)?.[0];
+    } catch(e){
+        throw new Error("Failed to find parent electron process invoked by user");
+    }
+}
+
+export const executablePath = getUserInvokedExecutablePath();
+if (!executablePath) throw new Error("Failed to find path to parent electron process executable");
+const executableDir = dirname(executablePath);
+
+export const userDataDefaultPath = path.join(executableDir, "userData");
+export const sessionDataDefaultPath = path.join(executableDir, "sessionData");
+const storePath = path.join(userDataDefaultPath, STORE_FILE_NAME);
 
 export default class ProtocolHandler {
     private readonly store: Record<string, string> = {};

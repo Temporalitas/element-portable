@@ -10,18 +10,7 @@ Please see LICENSE files in the repository root for full details.
 
 // Squirrel on windows starts the app with various flags as hooks to tell us when we've been installed/uninstalled etc.
 import "./squirrelhooks.js";
-import {
-    app,
-    BrowserWindow,
-    Menu,
-    autoUpdater,
-    dialog,
-    type Input,
-    type Event,
-    session,
-    protocol,
-    desktopCapturer,
-} from "electron";
+import { app, BrowserWindow, Menu, autoUpdater, dialog, type Input, type Event, session, protocol } from "electron";
 // eslint-disable-next-line n/file-extension-in-import
 import * as Sentry from "@sentry/electron/main";
 import AutoLaunch from "auto-launch";
@@ -40,13 +29,14 @@ import Store from "./store.js";
 import { buildMenuTemplate } from "./vectormenu.js";
 import webContentsHandler from "./webcontents-handler.js";
 import * as updater from "./updater.js";
-import ProtocolHandler from "./protocol.js";
+import ProtocolHandler, {userDataDefaultPath, sessionDataDefaultPath} from "./protocol.js";
 import { _t, AppLocalization } from "./language-helper.js";
 import { setDisplayMediaCallback } from "./displayMediaCallback.js";
 import { setupMacosTitleBar } from "./macos-titlebar.js";
 import { type Json, loadJsonFile } from "./utils.js";
 import { setupMediaAuth } from "./media-auth.js";
 import { readBuildConfig } from "./build-config.js";
+import process from "node:process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -56,17 +46,11 @@ const argv = minimist(process.argv, {
 
 if (argv["help"]) {
     console.log("Options:");
-    console.log("  --profile-dir {path}: Path to where to store the profile.");
-    console.log(
-        `  --profile {name}:     Name of alternate profile to use, allows for running multiple accounts.\n` +
-            `                         Ignored if --profile-dir is specified.\n` +
-            `                         The ELEMENT_PROFILE_DIR environment variable may be used to change the default profile path.\n` +
-            `                         It is overridden by --profile-dir, but can be combined with --profile.`,
-    );
+    console.log(`  --profile {name}:     Name of alternate profile to use, allows for running multiple accounts`);
     console.log("  --devtools:           Install and use react-devtools and react-perf.");
     console.log(
         `  --config:             Path to the config.json file. May also be specified via the ELEMENT_DESKTOP_CONFIG_JSON environment variable.\n` +
-            `                         Otherwise use the default user location '${app.getPath("userData")}'`,
+            `                         Otherwise use the default user location '${userDataDefaultPath}'`,
     );
     console.log("  --no-update:          Disable automatic updating.");
     console.log("  --hidden:             Start the application hidden in the system tray.");
@@ -78,46 +62,16 @@ if (argv["help"]) {
 const LocalConfigLocation = process.env.ELEMENT_DESKTOP_CONFIG_JSON ?? argv["config"];
 const LocalConfigFilename = "config.json";
 
-// Electron creates the user data directory (with just an empty 'Dictionaries' directory...)
-// as soon as the app path is set, so pick a random path in it that must exist if it's a
-// real user data directory.
-function isRealUserDataDir(d: string): boolean {
-    return fs.existsSync(path.join(d, "IndexedDB"));
-}
-
 const buildConfig = readBuildConfig();
 const protocolHandler = new ProtocolHandler(buildConfig.protocol);
 
-// check if we are passed a profile in the SSO callback url
-let userDataPath: string;
-
-const userDataPathInProtocol = protocolHandler.getProfileFromDeeplink(argv["_"]);
-if (userDataPathInProtocol) {
-    userDataPath = userDataPathInProtocol;
-} else if (argv["profile-dir"]) {
-    userDataPath = argv["profile-dir"];
-} else {
-    let newUserDataPath = process.env.ELEMENT_PROFILE_DIR ?? app.getPath("userData");
-    if (argv["profile"]) {
-        newUserDataPath += "-" + argv["profile"];
-    }
-    const newUserDataPathExists = isRealUserDataDir(newUserDataPath);
-    let oldUserDataPath = path.join(app.getPath("appData"), app.getName().replace("Element", "Riot"));
-    if (argv["profile"]) {
-        oldUserDataPath += "-" + argv["profile"];
-    }
-
-    const oldUserDataPathExists = isRealUserDataDir(oldUserDataPath);
-    console.log(newUserDataPath + " exists: " + (newUserDataPathExists ? "yes" : "no"));
-    console.log(oldUserDataPath + " exists: " + (oldUserDataPathExists ? "yes" : "no"));
-    if (!newUserDataPathExists && oldUserDataPathExists) {
-        console.log("Using legacy user data path: " + oldUserDataPath);
-        userDataPath = oldUserDataPath;
-    } else {
-        userDataPath = newUserDataPath;
-    }
-}
+const profile = argv["profile"] ? (argv["profile"] + "-profile") : "";
+const userDataPath = path.join(userDataDefaultPath, profile);
+const sessionDataPath = path.join(sessionDataDefaultPath, profile);
+if (!fs.existsSync(userDataPath)) fs.mkdirSync(userDataPath, {recursive: true});
+if (!fs.existsSync(sessionDataPath)) fs.mkdirSync(sessionDataPath, {recursive: true});
 app.setPath("userData", userDataPath);
+app.setPath("sessionData", sessionDataPath);
 
 async function tryPaths(name: string, root: string, rawPaths: string[]): Promise<string> {
     // Make everything relative to root
@@ -331,7 +285,7 @@ app.enableSandbox();
 // We disable media controls here. We do this because calls use audio and video elements and they sometimes capture the media keys. See https://github.com/vector-im/element-web/issues/15704
 app.commandLine.appendSwitch("disable-features", "HardwareMediaKeyHandling,MediaSessionService");
 
-const store = Store.initialize(argv["storage-mode"]); // must be called before any async actions
+const store = Store.initialize(); // must be called before any async actions
 
 // Disable hardware acceleration if the setting has been set.
 if (store.get("disableHardwareAcceleration")) {
@@ -470,14 +424,6 @@ app.on("ready", async () => {
 
     global.mainWindow.setContentProtection(store.get("enableContentProtection"));
 
-    try {
-        console.debug("Ensuring storage is ready");
-        if (!(await store.prepareSafeStorage(global.mainWindow.webContents.session))) return;
-    } catch (e) {
-        console.error(e);
-        app.exit(1);
-    }
-
     void global.mainWindow.loadURL("vector://vector/webapp/");
 
     if (process.platform === "darwin") {
@@ -565,28 +511,10 @@ app.on("ready", async () => {
 
     webContentsHandler(global.mainWindow.webContents);
 
-    session.defaultSession.setDisplayMediaRequestHandler(
-        (_, callback) => {
-            if (process.env.XDG_SESSION_TYPE === "wayland") {
-                // On Wayland, calling getSources() opens the xdg-desktop-portal picker.
-                // The user can only select a single source there, so Electron will return an array with exactly one entry.
-                desktopCapturer
-                    .getSources({ types: ["screen", "window"] })
-                    .then((sources) => {
-                        callback({ video: sources[0] });
-                    })
-                    .catch((err) => {
-                        // If the user cancels the dialog an error occurs "Failed to get sources"
-                        console.error("Wayland: failed to get user-selected source:", err);
-                        callback({ video: { id: "", name: "" } }); // The promise does not return if no dummy is passed here as source
-                    });
-            } else {
-                global.mainWindow?.webContents.send("openDesktopCapturerSourcePicker");
-            }
-            setDisplayMediaCallback(callback);
-        },
-        { useSystemPicker: true },
-    ); // Use Mac OS 15+ native picker
+    session.defaultSession.setDisplayMediaRequestHandler((_, callback) => {
+        global.mainWindow?.webContents.send("openDesktopCapturerSourcePicker");
+        setDisplayMediaCallback(callback);
+    });
 
     setupMediaAuth(global.mainWindow);
 });

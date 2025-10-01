@@ -75,7 +75,9 @@ yarn build:native
 
 ### Final build
 
-Just run the command:
+##### Windows
+
+Open `cmd` as administrator and just run the command:
 
 ```
 yarn build:portable
@@ -83,7 +85,13 @@ yarn build:portable
 
 Executable will be in the *./dist* folder. You can copy it anywhere and start using.
 
+##### Linux
 
+```
+yarn build:portable:linux
+```
+
+Application will be in *.AppImage* file in *./dist* folder. You can copy it anywhere and start using, but you should call it from terminal with specific startup parameters: `./Element-Portable.AppImage --appimage-extract-and-run --no-sandbox`
 
 # Profiles
 

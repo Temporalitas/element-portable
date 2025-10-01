@@ -16,11 +16,11 @@ limitations under the License.
 
 import ElectronStore from "electron-store";
 import { app, type Session } from "electron";
-import { _t } from "./language-helper.js";
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import crypto from "node:crypto";
 
+import { _t } from "./language-helper.js";
 import { executablePath } from "./protocol.js";
 
 /**
@@ -94,7 +94,7 @@ function loadSecrets(): SecretsData {
     try {
         const data = fs.readFileSync(getSecretsFilePath(), 'utf8');
         return JSON.parse(decrypt(data)) || {};
-    } catch (e) {
+    } catch (_) {
         return {};
     }
 }

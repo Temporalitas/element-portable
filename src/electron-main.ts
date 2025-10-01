@@ -24,6 +24,8 @@ import "./ipc.js";
 import "./seshat.js";
 import "./settings.js";
 import "./badge.js";
+import process from "node:process";
+
 import * as tray from "./tray.js";
 import Store from "./store.js";
 import { buildMenuTemplate } from "./vectormenu.js";
@@ -36,7 +38,6 @@ import { setupMacosTitleBar } from "./macos-titlebar.js";
 import { type Json, loadJsonFile } from "./utils.js";
 import { setupMediaAuth } from "./media-auth.js";
 import { readBuildConfig } from "./build-config.js";
-import process from "node:process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

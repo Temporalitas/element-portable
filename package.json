@@ -46,6 +46,7 @@
         "build:universal": "yarn run build:ts && yarn run build:res && electron-builder --universal",
         "build": "yarn run build:ts && yarn run build:res && electron-builder",
         "build:portable": "yarn run build:ts && yarn run build:res && electron-builder --x64 --win=portable",
+        "build:portable:linux": "yarn run build:ts && yarn run build:res && electron-builder --publish=never --linux --config.linux.target=appimage",
         "build:ts": "tsc",
         "build:res": "tsx scripts/copy-res.ts",
         "docker:setup": "docker build --platform linux/amd64 -t element-desktop-dockerbuild -f dockerbuild/Dockerfile .",

@@ -129,7 +129,7 @@ const config: Omit<Writable<Configuration>, "electronFuses"> & {
     linux: {
         target: ["tar.gz", "deb"],
         category: "Network;InstantMessaging;Chat",
-        icon: "build/icon.png",
+        icon: "icon.png",
         executableName: variant.name, // element-desktop or element-desktop-nightly
     },
     deb: {
@@ -151,12 +151,12 @@ const config: Omit<Writable<Configuration>, "electronFuses"> & {
         fpm: ["--deb-pre-depends", "libc6 (>= 2.31)"],
     },
     mac: {
+        target: ["dmg", "zip"],
         category: "public.app-category.social-networking",
         darkModeSupport: true,
         hardenedRuntime: true,
         gatekeeperAssess: true,
-        // XXX: we cannot specify this due to https://github.com/electron/osx-sign/issues/344
-        // strictVerify: true,
+        strictVerify: true,
         entitlements: "./build/entitlements.mac.plist",
         icon: "build/icon.icns",
         mergeASARs: true,

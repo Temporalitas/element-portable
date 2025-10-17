@@ -40,6 +40,8 @@ interface StoreData {
     locale?: string | string[];
     disableHardwareAcceleration: boolean;
     enableContentProtection: boolean;
+    /** whether to open the app at login minimised, only valid when app.openAtLogin is true */
+    openAtLoginMinimised: boolean;
 }
 
 interface SecretsData {
@@ -163,6 +165,10 @@ class Store extends ElectronStore<StoreData> {
                 enableContentProtection: {
                     type: "boolean",
                     default: false,
+                },
+                openAtLoginMinimised: {
+                    type: "boolean",
+                    default: true,
                 },
             },
         });

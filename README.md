@@ -32,13 +32,7 @@ yarn install
 ### Setup Element Web
 
 Since this package is just the Electron wrapper for Element Web, it doesn't contain any of the Element Web code,
-so the first step is to get an actual working copy of Element Web. Simplest way of doing this:
-
-```
-yarn run fetch --noverify --cfgdir ""
-```
-
-Packaged Element should have a configuration file with default Matrix server, integrations server, call API and so on. Official configuration can be found [here](https://github.com/Temporalitas/element-portable/blob/develop/element.io/release/config.json) and can be added with one command:
+so the first step is to get an actual working copy of Element Web. Also Packaged Element should have a configuration file with default Matrix server, integrations server, call API and so on. Official configuration can be found [here](https://github.com/Temporalitas/element-portable/blob/develop/element.io/release/config.json) and can be added with one command:
 
 ```
 yarn run fetch --noverify --cfgdir ./element.io/release
@@ -62,6 +56,7 @@ To build it, you need install the following tools on your system:
 2. [Perl](https://strawberryperl.com/)
 3. [Rust](https://rustup.rs/)
 4. [NASM](https://www.nasm.us/)
+5. sqlcipher lib (only on Linux): `sudo apt install libsqlcipher-dev`
 
 I'm assuming you already have Node and Git installed at the required versions since you've gotten this far.
 

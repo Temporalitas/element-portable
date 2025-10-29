@@ -166,6 +166,7 @@ function loadConfig(): Promise<void> {
             global.vectorConfig = Object.assign(global.vectorConfig, localConfig);
         } catch (e) {
             if (e instanceof SyntaxError) {
+                await app.whenReady();
                 void dialog.showMessageBox({
                     type: "error",
                     title: `Your ${global.vectorConfig.brand || "Element"} is misconfigured`,
@@ -245,11 +246,6 @@ process.on("uncaughtException", function (error: Error): void {
 app.commandLine.appendSwitch("--enable-usermedia-screen-capturing");
 if (!app.commandLine.hasSwitch("enable-features")) {
     app.commandLine.appendSwitch("enable-features", "WebRTCPipeWireCapturer");
-}
-// Workaround bug in electron 36:https://github.com/electron/electron/issues/46538
-// Hopefully this will no longer be needed soon and can be removed
-if (process.platform === "linux") {
-    app.commandLine.appendSwitch("gtk-version", "3");
 }
 
 const gotLock = app.requestSingleInstanceLock();

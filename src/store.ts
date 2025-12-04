@@ -27,10 +27,6 @@ import { executablePath } from "./protocol.js";
  * Service name for storing secrets.
  */
 const SERVICE = "element.io";
-/**
- * Legacy service name for reading secrets.
- */
-const LEGACY_SERVICE = "riot.im";
 
 interface StoreData {
     warnBeforeExit: boolean;
@@ -183,7 +179,7 @@ class Store extends ElectronStore<StoreData> {
      */
     public async getSecret(key: string): Promise<string | undefined> {
         const secrets = loadSecrets();
-        return secrets[toKey(SERVICE, key)] ?? secrets[toKey(LEGACY_SERVICE, key)];
+        return secrets[toKey(SERVICE, key)];
     }
 
     /**
@@ -208,7 +204,6 @@ class Store extends ElectronStore<StoreData> {
     public async deleteSecret(key: string): Promise<void> {
         const secrets = loadSecrets();
         delete secrets[toKey(SERVICE, key)];
-        delete secrets[toKey(LEGACY_SERVICE, key)];
         saveSecrets(secrets);
     }
 }

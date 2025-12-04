@@ -18,4 +18,5 @@ yarn-error.log
 /hak/**/*.js
 /scripts/hak/**/*.js
 .DS_Store
+/playwright-report
 /myconfig

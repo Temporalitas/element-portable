@@ -52,10 +52,10 @@ If you want message searching in your Matrix client, only possible option is to 
 
 To build it, you need install the following tools on your system:
 
-1. [Python 3](https://www.python.org/downloads/)
+1. [Python 3](https://www.python.org/downloads/). On Linux, install package `sudo apt install python-is-python3`
 2. [Perl](https://strawberryperl.com/)
 3. [Rust](https://rustup.rs/)
-4. [NASM](https://www.nasm.us/)
+4. [NASM](https://www.nasm.us/) on Windows or `sudo apt install make` on Linux
 5. sqlcipher lib (only on Linux): `sudo apt install libsqlcipher-dev`
 
 I'm assuming you already have Node and Git installed at the required versions since you've gotten this far.

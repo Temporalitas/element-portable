@@ -19,7 +19,7 @@ jobs:
             contents: read
             packages: write
         steps:
-            - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+            - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
             - name: Set up QEMU
               uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
@@ -52,7 +52,7 @@ jobs:
             - name: Extract metadata for Docker
               id: meta
               if: github.event_name != 'pull_request'
-              uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5
+              uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
               with:
                   images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
                   tags: |

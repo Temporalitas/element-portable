@@ -25,8 +25,8 @@ git clone https://github.com/Temporalitas/element-portable && cd element-portabl
 Install [Node](https://nodejs.org/en) with npm, then Yarn and fetch the dependencies:
 
 ```
-npm i -g yarn
-yarn install
+npm i -g pnpm
+pnpm install
 ```
 
 ### Setup Element Web
@@ -35,7 +35,7 @@ Since this package is just the Electron wrapper for Element Web, it doesn't cont
 so the first step is to get an actual working copy of Element Web. Also Packaged Element should have a configuration file with default Matrix server, integrations server, call API and so on. Official configuration can be found [here](https://github.com/Temporalitas/element-portable/blob/develop/element.io/release/config.json) and can be added with one command:
 
 ```
-yarn run fetch --noverify --cfgdir ./element.io/release
+pnpm run fetch --noverify --cfgdir ./element.io/release
 ```
 
 Also, you can create a config yourself or edit default config located in `./element.io/release`, then run:
@@ -43,7 +43,7 @@ Also, you can create a config yourself or edit default config located in `./elem
 ```
 mkdir myconfig
 cp /path/to/my/config.json myconfig/
-yarn run fetch --noverify --cfgdir myconfig
+pnpm run fetch --noverify --cfgdir myconfig
 ```
 
 ### Native modules (optional)
@@ -63,7 +63,7 @@ I'm assuming you already have Node and Git installed at the required versions si
 Then, simple build command:
 
 ```
-yarn build:native
+pnpm build:native
 ```
 
 **NB!** It will fail on file system that doesn't support symlinks (ExFAT, FAT32 etc). 
@@ -75,7 +75,7 @@ yarn build:native
 Open `cmd` as administrator and just run the command:
 
 ```
-yarn build:portable
+pnpm build:portable
 ```
 
 Executable will be in the *./dist* folder. You can copy it anywhere and start using.
@@ -83,7 +83,7 @@ Executable will be in the *./dist* folder. You can copy it anywhere and start us
 ##### Linux
 
 ```
-yarn build:portable:linux
+pnpm build:portable:linux
 ```
 
 Application will be in *.AppImage* file in *./dist* folder. You can copy it anywhere and start using, but you should call it from terminal with specific startup parameters: `./Element-Portable.AppImage --appimage-extract-and-run --no-sandbox`

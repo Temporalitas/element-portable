@@ -21,7 +21,7 @@ import path from 'node:path';
 import crypto from "node:crypto";
 
 import { _t } from "./language-helper.js";
-import { executablePath } from "./protocol.js";
+import { getPortableExecutablePath } from "./portable-path.js";
 
 /**
  * Service name for storing secrets.
@@ -46,7 +46,7 @@ interface SecretsData {
 
 function relaunchApp(): void {
     console.info("Relaunching app...");
-    app.relaunch({execPath: executablePath});
+    app.relaunch({execPath: getPortableExecutablePath()});
     app.exit();
 }
 

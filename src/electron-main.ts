@@ -30,13 +30,15 @@ import Store from "./store.js";
 import { buildMenuTemplate } from "./vectormenu.js";
 import webContentsHandler from "./webcontents-handler.js";
 import * as updater from "./updater.js";
-import ProtocolHandler, {userDataDefaultPath, sessionDataDefaultPath} from "./protocol.js";
+import ProtocolHandler from "./protocol.js";
 import { _t, AppLocalization } from "./language-helper.js";
 import { setDisplayMediaCallback } from "./displayMediaCallback.js";
 import { setupMacosTitleBar } from "./macos-titlebar.js";
 import { type Json, loadJsonFile } from "./utils.js";
 import { setupMediaAuth } from "./media-auth.js";
 import { readBuildConfig } from "./build-config.js";
+import { getPortableExecutableDir } from "./portable-path.js";
+import { migrateLegacyProfileLayout } from "./migrations/profile.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -50,7 +52,7 @@ if (argv["help"]) {
     console.log("  --devtools:           Install and use react-devtools and react-perf.");
     console.log(
         `  --config:             Path to the config.json file. May also be specified via the ELEMENT_DESKTOP_CONFIG_JSON environment variable.\n` +
-            `                         Otherwise use the default user location '${userDataDefaultPath}'`,
+            `                         Otherwise use the default user location`,
     );
     console.log("  --no-update:          Disable automatic updating.");
     console.log("  --hidden:             Start the application hidden in the system tray.");
@@ -62,12 +64,16 @@ if (argv["help"]) {
 const LocalConfigLocation = process.env.ELEMENT_DESKTOP_CONFIG_JSON ?? argv["config"];
 const LocalConfigFilename = "config.json";
 
-const buildConfig = readBuildConfig();
-const protocolHandler = new ProtocolHandler(buildConfig.protocol);
-
 const profile = argv["profile"] ? (argv["profile"] + "-profile") : "";
-const userDataPath = path.join(userDataDefaultPath, profile);
-const sessionDataPath = path.join(sessionDataDefaultPath, profile);
+const executableDir = getPortableExecutableDir();
+const userDataPath = path.join(executableDir, profile, "userData");
+const sessionDataPath = path.join(executableDir, profile, "sessionData");
+migrateLegacyProfileLayout(executableDir, profile, userDataPath, sessionDataPath);
+
+const buildConfig = readBuildConfig();
+const storePath = path.join(userDataPath, "sso-sessions.json");
+const protocolHandler = new ProtocolHandler(buildConfig.protocol, storePath);
+
 if (!fs.existsSync(userDataPath)) fs.mkdirSync(userDataPath, {recursive: true});
 if (!fs.existsSync(sessionDataPath)) fs.mkdirSync(sessionDataPath, {recursive: true});
 app.setPath("userData", userDataPath);

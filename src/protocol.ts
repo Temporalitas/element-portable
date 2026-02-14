@@ -8,44 +8,19 @@ Please see LICENSE files in the repository root for full details.
 
 import { app, ipcMain } from "electron";
 import { URL } from "node:url";
-import path, {dirname} from "node:path";
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
-import childProcess from "node:child_process";
 import process from "node:process";
 
 const LEGACY_PROTOCOL = "element";
 const SEARCH_PARAM = "element-desktop-ssoid";
-const STORE_FILE_NAME = "sso-sessions.json";
-
-function getUserInvokedExecutablePath(): string | undefined {
-    try{
-        if (process.platform === "win32") {
-            const parentProcessPath = childProcess.execSync(`powershell.exe "(Get-Process -Id ${process.ppid} | Select-Object -Property Path).Path"`).toString().trim();
-            if (parentProcessPath && !parentProcessPath.includes("powershell") && parentProcessPath.endsWith(".exe")) return parentProcessPath;
-
-            const parentElectronProcessInfo = childProcess.execSync("wmic process get executablePath, parentProcessId, processId").toString().split(/\r+\n+/)?.find(e => e.trim().endsWith(String(process.ppid)));
-            return /.+exe/.exec(parentElectronProcessInfo!)?.[0];
-        }
-        return childProcess.execSync(`readlink -f /proc/${process.ppid}/exe`).toString().trim();
-    } catch(_){
-        throw new Error("Failed to find parent electron process invoked by user");
-    }
-}
-
-export const executablePath = getUserInvokedExecutablePath();
-if (!executablePath) throw new Error("Failed to find path to parent electron process executable");
-const executableDir = dirname(executablePath);
-
-export const userDataDefaultPath = path.join(executableDir, "userData");
-export const sessionDataDefaultPath = path.join(executableDir, "sessionData");
-const storePath = path.join(userDataDefaultPath, STORE_FILE_NAME);
 
 export default class ProtocolHandler {
     private readonly store: Record<string, string> = {};
+    private readonly storePath: string;
     private readonly sessionId: string;
 
-    public constructor(private readonly protocol: string) {
+    public constructor(private readonly protocol: string, userStorePath: string) {
         // get all args except `hidden` as it'd mean the app would not get focused
         // XXX: passing args to protocol handlers only works on Windows, so unpackaged deep-linking
         // --profile/--profile-dir are passed via the SEARCH_PARAM var in the callback url
@@ -75,6 +50,7 @@ export default class ProtocolHandler {
             });
         }
 
+        this.storePath = userStorePath;
         this.store = this.readStore();
         this.sessionId = randomUUID();
 
@@ -116,7 +92,7 @@ export default class ProtocolHandler {
 
     private readStore(): Record<string, string> {
         try {
-            const s = fs.readFileSync(storePath, { encoding: "utf8" });
+            const s = fs.readFileSync(this.storePath, { encoding: "utf8" });
             const o = JSON.parse(s);
             return typeof o === "object" ? o : {};
         } catch {
@@ -125,7 +101,7 @@ export default class ProtocolHandler {
     }
 
     private writeStore(): void {
-        fs.writeFileSync(storePath, JSON.stringify(this.store));
+        fs.writeFileSync(this.storePath, JSON.stringify(this.store));
     }
 
     public initialise(userDataPath: string): void {
